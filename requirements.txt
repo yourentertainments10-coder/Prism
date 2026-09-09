@@ -1,0 +1,8 @@
+flask
+gunicorn
+openai
+anthropic
+psycopg2-binary
+python-dotenv
+httpx
+pypdf

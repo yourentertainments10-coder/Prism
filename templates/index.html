@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Prism AI — Chat</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='80' font-size='80'>✨</text></svg>">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.5/dist/purify.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+</head>
+<body>
+<div class="app">
+
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-head">
+      <div class="brand"><span class="brand-dot"></span> Prism AI</div>
+      <button class="icon-btn" id="closeSidebar" title="Close" aria-label="Close sidebar">✕</button>
+    </div>
+    <button class="new-chat-btn" id="newChatBtn">＋ New chat</button>
+    <nav class="chat-list" id="chatList"></nav>
+    <div class="sidebar-foot">
+      <div class="model-label">Model</div>
+      <select id="modelSelect" class="model-select" aria-label="Model"></select>
+    </div>
+  </aside>
+  <div class="scrim" id="scrim"></div>
+
+  <!-- Main -->
+  <main class="main">
+    <header class="topbar">
+      <button class="icon-btn" id="openSidebar" title="Menu" aria-label="Open sidebar">☰</button>
+      <div class="topbar-title" id="topbarTitle">New chat</div>
+      <div class="topbar-model" id="topbarModel"></div>
+    </header>
+
+    <div class="banner hidden" id="keyBanner">
+      ⚠️ No working NVIDIA API key found. Open <code>.env</code> in the project folder and set
+      <code>NVIDIA_API_KEY=nvapi-...</code> (get one free at build.nvidia.com), then restart the server.
+    </div>
+
+    <div class="chat-scroll" id="chatScroll">
+      <div class="chat-inner" id="chatInner">
+        <div class="welcome" id="welcome">
+          <div class="welcome-logo">✨</div>
+          <h1>How can I help you today?</h1>
+          <p>Ask anything — code, writing, research, planning, files, math, careers…</p>
+          <div class="suggestions">
+            <button class="chip" data-q="Debug this Python error for me: ">🐞 Debug my code</button>
+            <button class="chip" data-q="Explain in simple language: ">💡 Explain a concept</button>
+            <button class="chip" data-q="Write a professional email about ">✉️ Write an email</button>
+            <button class="chip" data-q="Help me plan a project: ">🗓️ Plan a project</button>
+            <button class="chip" data-q="Brainstorm startup ideas about ">🚀 Brainstorm ideas</button>
+            <button class="chip" data-q="Help me prepare for an interview for the role of ">💼 Interview prep</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Composer -->
+    <div class="composer-wrap">
+      <div class="attachments" id="attachments"></div>
+      <div class="composer">
+        <button class="icon-btn" id="attachBtn" title="Attach file (code, PDF, CSV, image…)" aria-label="Attach file">📎</button>
+        <input type="file" id="fileInput" hidden
+               accept=".txt,.md,.py,.js,.ts,.html,.css,.json,.csv,.tsv,.xml,.yml,.yaml,.java,.c,.cpp,.cs,.sql,.pdf,.log,image/*">
+        <textarea id="input" rows="1" placeholder="Message Prism…"></textarea>
+        <button class="toggle-btn" id="webToggle" title="Prefer live web research">🌐<span class="toggle-txt"> Web</span></button>
+        <button class="toggle-btn" id="agentToggle" title="Agent mode: can create/edit files and run commands in the workspace folder">🤖<span class="toggle-txt"> Agent</span></button>
+        <button class="send-btn" id="sendBtn" title="Send" aria-label="Send">➤</button>
+        <button class="send-btn stop hidden" id="stopBtn" title="Stop" aria-label="Stop">■</button>
+      </div>
+      <div class="hint">Enter to send · Shift+Enter for a new line</div>
+    </div>
+  </main>
+
+  <!-- Artifact preview panel -->
+  <aside class="artifact-panel hidden" id="artifactPanel">
+    <div class="artifact-head">
+      <span>🖼️ Preview</span>
+      <div>
+        <button class="icon-btn" id="artifactOpen" title="Open in new tab">⧉</button>
+        <button class="icon-btn" id="artifactClose" title="Close">✕</button>
+      </div>
+    </div>
+    <iframe id="artifactFrame" sandbox="allow-scripts" title="Artifact preview"></iframe>
+  </aside>
+</div>
+
+<script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "chatbot",
+      "runtimeExecutable": "D:\\Python\\chatbot\\env\\Scripts\\python.exe",
+      "runtimeArgs": ["D:\\Python\\chatbot\\app.py"],
+      "port": 5000
+    }
+  ]
+}
