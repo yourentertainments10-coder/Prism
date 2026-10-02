@@ -6,3 +6,11 @@ psycopg2-binary
 python-dotenv
 httpx
 pypdf
+openpyxl
+python-docx
+Pillow
+rapidocr-onnxruntime
+numpy
+PyMuPDF
+pytest
+ruff
