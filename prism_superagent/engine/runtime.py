@@ -149,6 +149,13 @@ class DeterministicEngine:
             return f"Rows: {result['count']}"
         if graph.kind == "document_extract":
             return result["text"][:12_000] or "No extractable text was found."
+        if graph.kind == "document_word_count":
+            lines = [
+                f"{item['filename']}: {item['word_count']} words"
+                for item in result["documents"]
+            ]
+            lines.append(f"Total: {result['total_word_count']} words")
+            return "\n".join(lines)
         if graph.kind == "document_compare":
             return f"Changed lines: {result['changed_lines']}\n```diff\n{result['diff'] or '(no differences)'}\n```"
         if graph.kind in ("json_format", "xml_format"):

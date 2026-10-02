@@ -29,6 +29,10 @@ def classify_document_request(content):
     docs = attached_documents(content)
     if not docs and not isinstance(content, list):
         return None
+    if docs and re.search(
+        r"\b(?:count|how many)\s+(?:the\s+)?words?\b", instructions
+    ):
+        return "document_word_count", {"documents": docs[:20]}
     if isinstance(content, list) and re.search(r"\b(ocr|extract text from (?:this|the) image)\b", instructions):
         images = _image_data(content)
         if images and ocr_available():
@@ -67,6 +71,20 @@ def classify_document_request(content):
 
 
 def execute_document(operation, inputs):
+    if operation == "document_word_count":
+        counts = [
+            {
+                "filename": document["filename"],
+                "word_count": len(
+                    re.findall(r"\b[\w]+(?:['’][\w]+)*\b", document["text"])
+                ),
+            }
+            for document in inputs["documents"]
+        ]
+        return {
+            "documents": counts,
+            "total_word_count": sum(item["word_count"] for item in counts),
+        }
     if operation == "document_extract":
         return {"text": "\n\n".join(
             f"### {doc['filename']}\n{doc['text']}" for doc in inputs["documents"])}

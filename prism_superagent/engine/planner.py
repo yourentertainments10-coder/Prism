@@ -28,6 +28,7 @@ class TaskPlanner:
         "table_filter": ("table_filter",),
         "table_deduplicate": ("table_deduplicate",),
         "table_row_count": ("table_row_count",),
+        "document_word_count": ("document_word_count",),
         "document_extract": ("document_extract",),
         "document_compare": ("document_compare",),
         "table_extract": ("table_extract",),

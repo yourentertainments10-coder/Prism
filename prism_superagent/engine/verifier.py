@@ -100,6 +100,13 @@ class ResultVerifier:
             return len(result.get("texts", [])) == len(graph.nodes[0].inputs["images"])
         if graph.kind == "table_row_count":
             return result.get("count") == len(graph.nodes[0].inputs["table"]["records"])
+        if graph.kind == "document_word_count":
+            return (
+                result.get("total_word_count")
+                == sum(item.get("word_count", -1) for item in result.get("documents", []))
+                and all(isinstance(item.get("word_count"), int) and item["word_count"] >= 0
+                        for item in result.get("documents", []))
+            )
         if graph.kind in ("table_sort", "table_filter", "table_deduplicate", "table_extract",
                           "csv_to_json", "document_extract", "json_query", "xml_query", "git_status", "git_diff",
                           "project_inspect", "python_ast"):

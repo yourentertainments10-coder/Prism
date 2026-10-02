@@ -366,6 +366,37 @@ def test_automatic_deterministic_route_still_executes_before_models(
     assert "Average of 3 values: 20" in response.get_data(as_text=True)
 
 
+def test_attached_document_word_count_is_deterministic_without_ollama(
+    active_app, monkeypatch
+):
+    model = _parse_model(_tags_response()["models"][0], "now")
+    models = _FakeModelRegistry([model])
+    monkeypatch.setattr(active_app, "ollama_model_registry", models)
+    monkeypatch.setattr(
+        active_app,
+        "run_agent_loop",
+        lambda *args: pytest.fail("deterministic word count must not use a model"),
+    )
+    monkeypatch.setattr(
+        active_app.api_registry_runtime,
+        "execute",
+        lambda *_args: pytest.fail("deterministic word count must not call an API"),
+    )
+    message = (
+        "Count the words in this document.\n\n[Attached file: notes.txt]\n```\n"
+        "Prism runs locally. No cloud call.\n```"
+    )
+    response = active_app.app.test_client().post(
+        "/api/chat",
+        json={"messages": [{"role": "user", "content": message}], "model": "auto"},
+    )
+    body = response.get_data(as_text=True)
+    assert response.status_code == 200
+    assert "notes.txt: 6 words" in body
+    assert "Total: 6 words" in body
+    assert models.refresh_calls == 0
+
+
 def test_existing_cloud_fallback_keeps_explicit_nvidia_choice(active_app, monkeypatch):
     calls = []
 

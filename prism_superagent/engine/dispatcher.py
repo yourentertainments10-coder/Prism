@@ -53,7 +53,9 @@ def execute_operation(operation, inputs):
     if operation in ("statistics", "percentage", "percent_change", "factorial", "square_root", "gcd", "lcm",
                      "unit_conversion", "temperature_conversion", "date_difference", "date_add", "date_add_months"):
         return execute_math(operation, inputs)
-    if operation in ("document_extract", "document_compare", "table_extract", "csv_to_json", "json_format",
+    if operation in (
+        "document_word_count", "document_extract", "document_compare", "table_extract",
+        "csv_to_json", "json_format",
                      "json_query", "xml_format", "xml_query", "ocr_images"):
         return execute_document(operation, inputs)
     if operation == "sql_query":
