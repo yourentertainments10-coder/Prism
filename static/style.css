@@ -216,6 +216,9 @@ details.thinking {
 }
 details.thinking summary { cursor: pointer; font-weight: 600; }
 details.thinking .think-body { margin-top: 8px; white-space: pre-wrap; }
+details.execution-trace { margin: 8px 0; font-size: 12px; color: var(--muted); }
+details.execution-trace summary { cursor: pointer; font-weight: 600; }
+details.execution-trace pre { margin: 6px 0 0; padding: 8px; overflow-x: auto; border-radius: 6px; background: var(--panel-2); color: var(--text); white-space: pre-wrap; }
 
 .err { color: var(--danger); background: rgba(229,72,77,.08); border: 1px solid rgba(229,72,77,.35); border-radius: 10px; padding: 10px 14px; }
 

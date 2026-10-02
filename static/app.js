@@ -200,6 +200,13 @@ function renderMessages() {
         d.querySelector(".think-body").textContent = (m.reasoning || "") + thinking;
         el.querySelector(".msg-body").insertBefore(d, content);
       }
+      if (m.executionTrace) {
+        const trace = document.createElement("details");
+        trace.className = "execution-trace";
+        trace.innerHTML = `<summary>Execution trace</summary><pre></pre>`;
+        trace.querySelector("pre").textContent = JSON.stringify(m.executionTrace, null, 2);
+        el.querySelector(".msg-body").insertBefore(trace, content);
+      }
       content.innerHTML = mdToHtml(text);
       enhanceContent(content);
       addActions(el, m);
@@ -285,7 +292,7 @@ async function streamAssistant() {
   // strip local-only fields before sending
   const apiMessages = chat.messages.map(({ role, content }) => ({ role, content }));
 
-  let full = "", reasoning = "", errored = false;
+  let full = "", reasoning = "", errored = false, executionTrace = null;
   const actions = [];   // tool steps: {name, label, done}
   try {
     const resp = await fetch("/api/chat", {
@@ -307,6 +314,7 @@ async function streamAssistant() {
         if (!part.startsWith("data: ")) continue;
         let j;
         try { j = JSON.parse(part.slice(6)); } catch (e) { continue; }
+        if (j.execution_trace) executionTrace = j.execution_trace;
         if (j.error) {
           errored = true;
           liveBubble.querySelector(".content").innerHTML = `<div class="err"></div>`;
@@ -337,7 +345,8 @@ async function streamAssistant() {
 
   if (!errored && (full || reasoning)) {
     chat.messages.push({ role: "assistant", content: full, reasoning: reasoning || undefined,
-                         actions: actions.length ? actions : undefined });
+                         actions: actions.length ? actions : undefined,
+                         executionTrace: executionTrace || undefined });
     save();
     liveBubble = null;
     renderMessages();

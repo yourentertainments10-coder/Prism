@@ -14,6 +14,7 @@ import httpx
 
 from prism_superagent.engine.attachments import request_text
 from prism_superagent.engine.errors import FallbackToModel
+from prism_superagent.tracing import record_trace
 
 _URL = re.compile(r"https://[^\s<>()\]]+", re.IGNORECASE)
 
@@ -77,6 +78,7 @@ def _validate_public_https(url):
 def _request(url, params=None):
     _validate_public_https(url)
     try:
+        record_trace("external_api_request", url=url)
         with httpx.Client(timeout=httpx.Timeout(15, connect=5), follow_redirects=False,
                           headers={"User-Agent": "Prism/2.0"}) as client:
             with client.stream("GET", url, params=params) as response:

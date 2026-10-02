@@ -7,6 +7,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tempfile
 from pathlib import Path, PurePosixPath
 
 _SKIP_DIRS = {".git", ".venv", "venv", "env", "node_modules", "__pycache__", ".pytest_cache"}
@@ -35,6 +36,70 @@ class DevelopmentTools:
         if operation == "patch_test_verify":
             return self._patch_test_verify(inputs["patch"])
         raise ValueError(f"Unsupported development operation: {operation}")
+
+    def verify_workspace_changes(self, changed_paths=None):
+        """Run bounded syntax, lint, and test checks after an agent edit."""
+        paths = []
+        for relative in changed_paths or []:
+            try:
+                paths.extend(self._python_files(relative))
+            except (OSError, ValueError):
+                continue
+        python_files = paths or self._python_files()
+        syntax = self._analyze_python(python_files, "python_compile")
+        lint = self._analyze_python(python_files, "python_lint")
+        formatting = self._check_formatting(python_files)
+        tests = self._run_tests()
+        tests_found = tests.get("tests_found") is not False
+        ok = (
+            syntax.get("ok", False)
+            and tests.get("ok", False)
+            and (lint.get("linter") != "ruff" or lint.get("ok", False))
+            and formatting.get("ok") is not False
+        )
+        if not ok:
+            verification = "verification_failed"
+        elif tests_found:
+            verification = "tests_passed"
+        elif python_files:
+            verification = "compile_only_no_tests"
+        else:
+            verification = "no_verifier_available"
+        return {
+            "ok": ok,
+            "verification": verification,
+            "syntax": syntax,
+            "lint": lint,
+            "formatting": formatting,
+            "tests": tests,
+            "tests_found": tests_found,
+            "files_checked": len(python_files),
+        }
+
+    def _check_formatting(self, files):
+        if not files or not importlib.util.find_spec("ruff"):
+            return {"available": False, "ok": None, "text": "Ruff formatter is not installed."}
+        targets = (
+            [str(path) for path in files]
+            if len(files) <= 20
+            else [str(self.workspace)]
+        )
+        try:
+            result = subprocess.run(
+                [sys.executable, "-m", "ruff", "format", "--check", *targets],
+                cwd=self.workspace,
+                shell=False,
+                capture_output=True,
+                text=True,
+                timeout=self.timeout,
+            )
+            return {
+                "available": True,
+                "ok": result.returncode == 0,
+                "text": (result.stdout + result.stderr)[:self.output_limit],
+            }
+        except (OSError, subprocess.TimeoutExpired) as exc:
+            return {"available": True, "ok": False, "text": f"Ruff format check failed: {exc}"}
 
     def _git(self, args):
         if not (self.workspace / ".git").exists():
@@ -89,18 +154,24 @@ class DevelopmentTools:
                 and (path == root or root in path.parents)][:500]
 
     def _analyze_python(self, files, operation):
-        if operation == "python_lint" and importlib.util.find_spec("ruff"):
-            target = str(files[0]) if len(files) == 1 else str(self.workspace)
+        if operation == "python_lint" and files and importlib.util.find_spec("ruff"):
+            targets = (
+                [str(path) for path in files]
+                if len(files) <= 20
+                else [str(self.workspace)]
+            )
             try:
-                result = subprocess.run([sys.executable, "-m", "ruff", "check", "--no-cache", target],
+                result = subprocess.run([sys.executable, "-m", "ruff", "check", "--no-cache", *targets],
                                         cwd=self.workspace, shell=False, capture_output=True,
                                         text=True, timeout=self.timeout)
                 return {"files_checked": len(files), "errors": [],
                         "warnings": (result.stdout + result.stderr).splitlines()[:200],
-                        "ok": result.returncode == 0, "text": (result.stdout + result.stderr)[:self.output_limit]}
+                        "ok": result.returncode == 0, "linter": "ruff",
+                        "text": (result.stdout + result.stderr)[:self.output_limit]}
             except (OSError, subprocess.TimeoutExpired) as exc:
                 return {"files_checked": len(files), "errors": [],
-                        "warnings": [f"Ruff could not complete: {exc}"], "ok": False}
+                        "warnings": [f"Ruff could not complete: {exc}"],
+                        "ok": False, "linter": "ruff"}
         errors, summaries, warnings = [], [], []
         for path in files:
             try:
@@ -130,7 +201,8 @@ class DevelopmentTools:
             except (OSError, UnicodeError, SyntaxError, ValueError) as exc:
                 errors.append({"file": path.relative_to(self.workspace).as_posix(),
                                "error": f"{type(exc).__name__}: {exc}"})
-        result = {"files_checked": len(files), "errors": errors, "warnings": warnings[:200]}
+        result = {"files_checked": len(files), "errors": errors,
+                  "warnings": warnings[:200], "linter": "builtin"}
         if summaries:
             result["modules"] = summaries[:200]
         result["ok"] = not errors and (operation != "python_lint" or not warnings)
@@ -147,13 +219,28 @@ class DevelopmentTools:
                           for p in test_files)
         if importlib.util.find_spec("pytest"):
             command = [sys.executable, "-m", "pytest", "-q", "--disable-warnings", "--maxfail=1"]
+            use_pytest = True
         elif uses_pytest:
             return {"ok": False, "text": "pytest-style tests were found, but pytest is not installed."}
         else:
             command = [sys.executable, "-m", "unittest", "discover", "-v"]
+            use_pytest = False
         try:
-            result = subprocess.run(command, cwd=self.workspace, shell=False,
-                                    capture_output=True, text=True, timeout=self.timeout)
+            if use_pytest:
+                with tempfile.TemporaryDirectory(
+                    prefix=".prism-pytest-", dir=self.workspace
+                ) as pytest_temp:
+                    result = subprocess.run(
+                        [*command, "--basetemp", pytest_temp],
+                        cwd=self.workspace,
+                        shell=False,
+                        capture_output=True,
+                        text=True,
+                        timeout=self.timeout,
+                    )
+            else:
+                result = subprocess.run(command, cwd=self.workspace, shell=False,
+                                        capture_output=True, text=True, timeout=self.timeout)
             return {"ok": result.returncode == 0,
                     "returncode": result.returncode,
                     "text": (result.stdout + result.stderr)[-self.output_limit:],

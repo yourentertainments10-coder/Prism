@@ -50,6 +50,7 @@ from prism_superagent.engine.attachments import attached_documents, request_text
 from prism_superagent.engine.documents import ocr_pdf_bytes
 from prism_superagent.engine.errors import FallbackToModel
 from prism_superagent.engine.runtime import DeterministicEngine
+from prism_superagent.tracing import ExecutionTrace, bind_trace, reset_trace
 from providers import anthropic as anthropic_provider
 from providers import openai_compatible as nvidia_provider
 
@@ -250,6 +251,27 @@ def chat():
             deterministic_graph, api_match, selected_provider_name
         )
     )
+    trace_capability = (
+        deterministic_graph.kind
+        if deterministic_graph
+        else api_match.capability
+        if api_match
+        else "semantic_document_summary"
+        if selected_local_model
+        else "agent_tool_workflow"
+        if agent_mode
+        else "general_chat"
+    )
+    trace_request = _trace_request_text(user_content)
+    trace = ExecutionTrace(trace_request, agent_mode=agent_mode)
+    trace_model = (
+        selected_local_model.name
+        if selected_local_model
+        else model
+        if provider in ("nvidia", "anthropic")
+        else None
+    )
+    trace.set_route(provider, trace_capability, trace_model)
     record("request_route", provider=provider, model=model)
     system_text = (
         "" if deterministic_graph or api_match else system_prompt(agent_mode, web_mode)
@@ -258,6 +280,8 @@ def chat():
     tools = None if has_image else tool_defs(agent_mode)  # vision model: plain chat
 
     def sse(obj):
+        if obj.get("done") is True or obj.get("error"):
+            obj = {**obj, "execution_trace": trace.snapshot()}
         return "data: " + json.dumps(obj, ensure_ascii=False) + "\n\n"
 
     def generate_claude():
@@ -422,12 +446,14 @@ def chat():
     )
 
     def timed_stream():
+        trace_token = bind_trace(trace)
         stream_timing_token = bind_request(request_id, request_started)
         try:
             yield from gen()
         finally:
             record("request_end", total_ms=elapsed_ms(request_started))
             end_request(stream_timing_token)
+            reset_trace(trace_token)
 
     return Response(
         stream_with_context(timed_stream()),
@@ -446,6 +472,18 @@ def _is_document_summary_request(text):
             re.IGNORECASE,
         )
     )
+
+
+def _trace_request_text(content):
+    if isinstance(content, str):
+        return request_text(content)
+    if isinstance(content, list):
+        return " ".join(
+            item.get("text", "")
+            for item in content
+            if isinstance(item, dict) and isinstance(item.get("text"), str)
+        )
+    return ""
 
 
 def _refresh_capability_registry():

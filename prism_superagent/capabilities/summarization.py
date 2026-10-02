@@ -3,6 +3,7 @@
 from dataclasses import dataclass
 
 import httpx
+from prism_superagent.tracing import record_trace
 
 
 @dataclass(frozen=True)
@@ -53,6 +54,11 @@ class LocalDocumentSummarizer:
             )
             + "Summarize this extracted document text:\n\n"
             + source
+        )
+        record_trace(
+            "local_inference_start",
+            model=model.name,
+            capability="semantic_document_summary",
         )
         with httpx.Client(timeout=self.timeout, transport=self.transport) as client:
             response = client.post(

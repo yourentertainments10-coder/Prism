@@ -14,6 +14,7 @@ import uuid
 
 import httpx
 from dotenv import load_dotenv
+from prism_superagent.tracing import record_trace
 
 load_dotenv()
 
@@ -89,14 +90,20 @@ def tool_defs(agent_mode):
     return tools
 
 def safe_path(rel):
-    p = os.path.realpath(os.path.join(WORKSPACE, rel))
-    if not p.startswith(os.path.realpath(WORKSPACE)):
+    root = os.path.realpath(WORKSPACE)
+    p = os.path.realpath(os.path.join(root, rel))
+    try:
+        inside_workspace = os.path.commonpath((root, p)) == root
+    except ValueError:
+        inside_workspace = False
+    if not inside_workspace:
         raise ValueError("Path escapes the workspace folder")
     return p
 
 STRIP_TAGS = re.compile(r"<(script|style|nav|header|footer|noscript)[\s\S]*?</\1>|<[^>]+>")
 
 def t_web_search(query):
+    record_trace("external_api_request", source="web_search")
     r = httpx.get("https://html.duckduckgo.com/html/", params={"q": query},
                   headers={"User-Agent": "Mozilla/5.0"}, timeout=12, follow_redirects=True)
     items = re.findall(
@@ -109,6 +116,7 @@ def t_web_search(query):
 def t_fetch_url(url):
     if not url.startswith(("http://", "https://")):
         url = "https://" + url
+    record_trace("external_api_request", source="fetch_url")
     r = httpx.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=15, follow_redirects=True)
     text = STRIP_TAGS.sub(" ", r.text)
     text = re.sub(r"\s+", " ", text).strip()
@@ -127,6 +135,8 @@ def t_generate_image(prompt):
          lambda j: (j.get("artifacts") or [{}])[0].get("base64")),
     ]:
         try:
+            record_trace("external_api_request", source="image_provider")
+            record_trace("cloud_provider_call", provider="nvidia")
             r = httpx.post(url, headers={"Authorization": f"Bearer {API_KEY}",
                                          "Accept": "application/json"},
                            json=payload, timeout=90)
@@ -142,6 +152,7 @@ def t_generate_image(prompt):
     # 2) Fallback: pollinations.ai (free, no key)
     try:
         from urllib.parse import quote
+        record_trace("external_api_request", source="image_provider_fallback")
         r = httpx.get(f"https://image.pollinations.ai/prompt/{quote(prompt[:400])}"
                       f"?width=1024&height=1024&nologo=true",
                       timeout=90, follow_redirects=True)

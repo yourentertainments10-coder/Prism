@@ -5,6 +5,8 @@ import json
 import logging
 import time
 
+from prism_superagent.tracing import record_trace
+
 _request = contextvars.ContextVar("prism_timing_request", default=None)
 _logger = logging.getLogger("prism.timing")
 _logger.setLevel(logging.INFO)
@@ -41,6 +43,7 @@ def clear_request():
 
 
 def record(event, **fields):
+    record_trace(event, **fields)
     context = _request.get()
     data = {"event": event}
     if context:

@@ -19,6 +19,7 @@ from prism_superagent.api_registry.health import ProviderHealthMonitor
 from prism_superagent.api_registry.matcher import RegistryMatcher
 from prism_superagent.api_registry.models import ProviderMatch
 from prism_superagent.api_registry.registry import APIRegistry
+from prism_superagent.tracing import record_trace
 
 
 class APIRegistryRuntime:
@@ -79,6 +80,11 @@ class APIRegistryRuntime:
 
             self._throttle(provider)
             try:
+                record_trace(
+                    "external_api_request",
+                    provider_id=provider.provider_id,
+                    capability=provider.capability,
+                )
                 response, latency_ms, validation = self.executor.execute(
                     provider, request_parameters
                 )
