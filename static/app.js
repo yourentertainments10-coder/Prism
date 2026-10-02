@@ -485,6 +485,10 @@ async function init() {
     const r = await fetch("/api/config");
     const cfg = await r.json();
     modelSelect.innerHTML = "";
+    const automatic = document.createElement("option");
+    automatic.value = "auto";
+    automatic.textContent = "Auto · Prism local-first";
+    modelSelect.appendChild(automatic);
     for (const m of cfg.models) {
       const o = document.createElement("option");
       o.value = m.id;
@@ -493,6 +497,7 @@ async function init() {
     }
     const savedModel = localStorage.getItem("nova_model");
     if (savedModel && cfg.models.some((m) => m.id === savedModel)) modelSelect.value = savedModel;
+    else modelSelect.value = "auto";
     $("topbarModel").textContent = modelSelect.selectedOptions[0]?.textContent || "";
     if (!cfg.hasKey || !cfg.keyLooksNvidia) $("keyBanner").classList.remove("hidden");
   } catch (e) {}

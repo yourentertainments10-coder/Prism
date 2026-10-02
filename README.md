@@ -3,13 +3,15 @@
 A ChatGPT + Claude + coding-agent style app running on NVIDIA's free inference API, with optional real Claude models via the Anthropic API.
 
 ## Capabilities
+- **Universal deterministic engine** - clear math, conversions, date calculations, statistics, tabular and SQL queries, JSON/XML, document extraction, OCR, Git and project inspection, Python analysis, linting, and tests run through a local classifier, planner, executor, and verifier before the selected AI provider is considered. See [Phase 2 engine notes](prism_superagent/docs/PHASE_2_DETERMINISTIC_ENGINE.md) for supported requests and limits.
 - **Live web** — the model can search (DuckDuckGo) and read full web pages on its own, then cite sources. Toggle 🌐 to make it prefer web research.
 - **Real image generation** — ask for an image; it appears right in the chat (NVIDIA image models, with a free fallback provider). Saved under `workspace/images/`.
 - **Run code** — the model can execute Python in the persistent `workspace/` folder (like ChatGPT's Code Interpreter). You can also press **▶ Run** on any Python code block in a reply.
+- **Deterministic-first calculations** — clear arithmetic requests and supported CSV/Excel averages, sums, and monthly sales totals run locally through Prism's classifier, task graph, executor, and verifier before a model provider is considered.
 - **Memory across sessions** — tell it things about you; it saves facts to `memories.json` and recalls them in every future conversation.
 - **Agent mode (🤖 toggle)** — Claude Code-style: it can list/read/write files and run shell commands inside `workspace/`, so it can build and test whole mini-projects autonomously. Everything is confined to that folder.
 - **Artifacts** — HTML code blocks get a 🖼 **Preview** button that renders the page/app live beside the chat.
-- **Files in** — attach code, .txt, .csv, .json, .pdf and ask questions; attach images (auto-routes to Llama 3.2 90B Vision).
+- **Files in** — attach code, .txt, .csv, .xlsx, .docx, .json, .xml, .pdf and ask questions; attach images for local OCR or vision analysis.
 - **Rich output** — Markdown, syntax-highlighted code with copy buttons, tables, Mermaid diagrams, SVG.
 - Streaming, model picker (Kimi K3, DeepSeek V4, Nemotron, GPT-OSS, Mistral, Codestral, Claude Opus 5, Claude Sonnet 5…), auto-fallback when an NVIDIA model is rate-limited, collapsible "Thinking" for reasoning models, chat history, responsive on laptop/tablet/mobile.
 
