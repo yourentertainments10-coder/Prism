@@ -1,0 +1,51 @@
+{
+  "provider_id": "open_meteo_geocoding",
+  "name": "Open-Meteo Geocoding",
+  "capability": "geocoding",
+  "catalog_entry_name": "Open-Meteo",
+  "catalog_category": "Weather",
+  "base_url": "https://geocoding-api.open-meteo.com",
+  "allowed_hosts": ["geocoding-api.open-meteo.com"],
+  "endpoint": "/v1/search",
+  "method": "GET",
+  "query_parameters": {
+    "name": {"type": "string", "max_length": 160},
+    "count": {"type": "integer"},
+    "language": {"type": "string", "max_length": 8},
+    "format": {"type": "string", "enum": ["json"]}
+  },
+  "required_parameters": ["name"],
+  "default_parameters": {"count": 5, "language": "en", "format": "json"},
+  "response_type": "json",
+  "response_schema": {
+    "type": "object",
+    "required": ["results"],
+    "properties": {
+      "results": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": ["name", "latitude", "longitude"],
+          "properties": {
+            "name": {"type": "string"},
+            "latitude": {"type": "number"},
+            "longitude": {"type": "number"}
+          }
+        }
+      }
+    }
+  },
+  "authentication_configuration": {"type": "none"},
+  "environment_variable_references": [],
+  "timeout_seconds": 8,
+  "response_size_limit": 262144,
+  "cache_policy": {"ttl_seconds": 86400, "max_entries": 64, "success_only": true},
+  "pricing_status": "terms_require_review; commercial use not assumed",
+  "authority_status": "not_assessed",
+  "verification_status": "provider documentation reviewed; endpoint not live-checked",
+  "headers": {},
+  "header_environment": {},
+  "path_parameters": [],
+  "priority": 10,
+  "enabled": true
+}

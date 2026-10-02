@@ -1,0 +1,38 @@
+{
+  "provider_id": "frankfurter_currency_rate",
+  "name": "Frankfurter exchange rates",
+  "capability": "currency_rate",
+  "catalog_entry_name": "Frankfurter",
+  "catalog_category": "Currency Exchange",
+  "base_url": "https://api.frankfurter.dev",
+  "allowed_hosts": ["api.frankfurter.dev"],
+  "endpoint": "/v2/rate/{base}/{quote}",
+  "method": "GET",
+  "query_parameters": {},
+  "required_parameters": [],
+  "default_parameters": {},
+  "response_type": "json",
+  "response_schema": {
+    "type": "object",
+    "required": ["date", "base", "quote", "rate"],
+    "properties": {
+      "date": {"type": "string"},
+      "base": {"type": "string"},
+      "quote": {"type": "string"},
+      "rate": {"type": "number"}
+    }
+  },
+  "authentication_configuration": {"type": "none"},
+  "environment_variable_references": [],
+  "timeout_seconds": 8,
+  "response_size_limit": 65536,
+  "cache_policy": {"ttl_seconds": 3600, "max_entries": 128, "success_only": true},
+  "pricing_status": "unknown; catalogue auth metadata is not a pricing guarantee",
+  "authority_status": "provider documentation reviewed; source authority not independently assessed",
+  "verification_status": "provider documentation reviewed; endpoint not live-checked",
+  "headers": {},
+  "header_environment": {},
+  "path_parameters": ["base", "quote"],
+  "priority": 10,
+  "enabled": true
+}

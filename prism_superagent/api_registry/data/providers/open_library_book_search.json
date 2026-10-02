@@ -1,0 +1,41 @@
+{
+  "provider_id": "open_library_book_search",
+  "name": "Open Library book search",
+  "capability": "book_search",
+  "catalog_entry_name": "Open Library",
+  "catalog_category": "Books",
+  "base_url": "https://openlibrary.org",
+  "allowed_hosts": ["openlibrary.org"],
+  "endpoint": "/search.json",
+  "method": "GET",
+  "query_parameters": {
+    "q": {"type": "string", "max_length": 160},
+    "fields": {"type": "string", "max_length": 300},
+    "limit": {"type": "integer"}
+  },
+  "required_parameters": ["q"],
+  "default_parameters": {
+    "fields": "key,title,author_name,first_publish_year,edition_count",
+    "limit": 8
+  },
+  "response_type": "json",
+  "response_schema": {
+    "type": "object",
+    "required": ["docs"],
+    "properties": {"docs": {"type": "array"}}
+  },
+  "authentication_configuration": {"type": "none"},
+  "environment_variable_references": ["PRISM_API_CONTACT"],
+  "timeout_seconds": 10,
+  "response_size_limit": 524288,
+  "cache_policy": {"ttl_seconds": 21600, "max_entries": 64, "success_only": true},
+  "pricing_status": "unknown; catalogue auth metadata is not a pricing guarantee",
+  "authority_status": "provider documentation reviewed; source authority not independently assessed",
+  "verification_status": "provider documentation reviewed; endpoint not live-checked",
+  "headers": {"User-Agent": "PrismAPIRegistry/3.0 ({env:PRISM_API_CONTACT})"},
+  "header_environment": {},
+  "path_parameters": [],
+  "priority": 10,
+  "min_interval_seconds": 1.0,
+  "enabled": true
+}
